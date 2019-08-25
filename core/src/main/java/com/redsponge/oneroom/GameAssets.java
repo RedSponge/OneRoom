@@ -13,4 +13,16 @@ public class GameAssets extends AssetSpecifier {
 
     @Asset("room/room_background.png")
     private Texture roomTexture;
+
+    @Asset("lever/on.png")
+    private Texture leverOnTexture;
+
+    @Asset("lever/off.png")
+    private Texture leverOffTexture;
+
+    @Asset("hints/press_x.png")
+    private Texture hintPressX;
+
+    @Asset("player/player.png")
+    private Texture player;
 }
