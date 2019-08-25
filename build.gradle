@@ -1,0 +1,48 @@
+buildscript {
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		google()
+		maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+		maven { url 'https://jitpack.io'}
+		jcenter()
+	}
+	dependencies {
+		classpath "com.badlogicgames.gdx:gdx-tools:$gdxVersion"
+	}
+}
+
+allprojects {
+	apply plugin: 'eclipse'
+	apply plugin: 'idea'
+	repositories {
+		maven { url 'https://jitpack.io' }
+	}
+}
+
+configure(subprojects) {
+	apply plugin: 'java-library'
+	sourceCompatibility = 1.8
+	compileJava {
+		options.incremental = true
+	}
+}
+
+subprojects {
+	version = '1.0'
+	ext.appName = 'OneRoom'
+	repositories {
+		mavenLocal()
+		mavenCentral()
+		maven { url 'https://oss.sonatype.org/content/repositories/snapshots/' }
+		maven { url 'https://jitpack.io' }
+		jcenter()
+	}
+}
+
+// Clearing Eclipse project data in root folder:
+tasks.eclipse.doLast {
+	delete '.project'
+	delete '.classpath'
+	delete '.settings/'
+}
