@@ -10,6 +10,8 @@ import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.DelayedRemovalArray;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.redsponge.redengine.assets.AssetSpecifier;
+import com.redsponge.redengine.lighting.LightSystem;
+import com.redsponge.redengine.lighting.LightType;
 import com.redsponge.redengine.physics.PhysicsDebugRenderer;
 import com.redsponge.redengine.physics.PhysicsWorld;
 import com.redsponge.redengine.screen.AbstractScreen;
@@ -40,7 +42,10 @@ public class GameScreen extends AbstractScreen {
 
     private Player player;
     private ComputerScreen computerScreen;
+    private Texture wood;
     private Vector3 camTarget = new Vector3();
+
+    private LightSystem ls;
 
     public GameScreen(GameAccessor ga) {
         super(ga);
@@ -49,7 +54,13 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void show() {
         viewport = new FitViewport(WIDTH, HEIGHT);
+        addSystem(LightSystem.class, WIDTH, HEIGHT, batch);
+        ls = getSystem(LightSystem.class);
+        ls.registerLightType(LightType.MULTIPLICATIVE);
+        ls.setAmbianceColor(Color.GRAY, LightType.MULTIPLICATIVE);
+
         roomTexture = assets.get("roomTexture", Texture.class);
+        wood = assets.get("backgroundTile", Texture.class);
 
         pWorld = new PhysicsWorld();
         walls = new DelayedRemovalArray<>();
@@ -116,9 +127,6 @@ public class GameScreen extends AbstractScreen {
         Vector3 camPos = viewport.getCamera().position;
         camPos.x = MathUtilities.lerp(camPos.x, camTarget.x, 0.1f);
         camPos.y = MathUtilities.lerp(camPos.y, camTarget.y, 0.1f);
-//        if(viewport.getCamera().position.dst(camTarget) < 0.5f) {
-//            viewport.getCamera().position.set(camTarget);
-//        }
     }
 
 
@@ -201,14 +209,23 @@ public class GameScreen extends AbstractScreen {
 
         viewport.apply();
         shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
-
-        shapeRenderer.begin(ShapeType.Filled);
-        shapeRenderer.setColor(BACKGROUND_COLOR);
-        shapeRenderer.rect(-WIDTH * 2, -HEIGHT * 2, WIDTH * 5, HEIGHT * 5);
-        shapeRenderer.end();
-
         batch.setProjectionMatrix(viewport.getCamera().combined);
-        renderRoom();
+        batch.begin();
+        int w = (WIDTH * 5) / wood.getWidth();
+        int h = (HEIGHT * 5) / wood.getHeight();
+        for(int i = (-WIDTH * 2) / wood.getWidth(); i < w; i++) {
+            for(int j = (-HEIGHT * 2) / wood.getHeight(); j < h; j++) {
+                batch.draw(wood, i * wood.getWidth(), j * wood.getHeight());
+            }
+        }
+        batch.end();
+
+//        shapeRenderer.begin(ShapeType.Filled);
+//        shapeRenderer.setColor(BACKGROUND_COLOR);
+//        shapeRenderer.rect(-WIDTH * 2, -HEIGHT * 2, WIDTH * 5, HEIGHT * 5);
+//        shapeRenderer.end();
+
+//        renderRoom();
 
         batch.begin();
         renderEntities();
@@ -222,16 +239,9 @@ public class GameScreen extends AbstractScreen {
             }
         }
         shapeRenderer.end();
-//
-        shapeRenderer.begin(ShapeType.Line);
-        shapeRenderer.setColor(Color.RED);
-        for (PortalLink portal : portals) {
-            shapeRenderer.circle(portal.getFirst().x, portal.getFirst().y, portal.getRadius());
-            shapeRenderer.circle(portal.getSecond().x, portal.getSecond().y, portal.getRadius());
-        }
-        shapeRenderer.end();
 
-        pdr.render(pWorld, viewport.getCamera().combined);
+//        ls.prepareMap(LightType.MULTIPLICATIVE, viewport);
+//        ls.renderToScreen(LightType.MULTIPLICATIVE);
     }
 
     private void renderRoom() {
@@ -249,6 +259,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height);
+        ls.resize(width, height);
     }
 
     @Override

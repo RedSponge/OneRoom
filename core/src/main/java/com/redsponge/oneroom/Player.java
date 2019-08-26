@@ -2,18 +2,21 @@ package com.redsponge.oneroom;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
-import com.badlogic.gdx.math.Vector3;
 import com.redsponge.redengine.input.SimpleInputTranslator;
+import com.redsponge.redengine.lighting.LightSystem;
+import com.redsponge.redengine.lighting.LightTextures;
+import com.redsponge.redengine.lighting.LightType;
+import com.redsponge.redengine.lighting.PointLight;
 import com.redsponge.redengine.physics.PActor;
 import com.redsponge.redengine.physics.PhysicsWorld;
 import com.redsponge.redengine.screen.ScreenEntity;
 import com.redsponge.redengine.utils.IntVector2;
-import com.redsponge.redengine.utils.Logger;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

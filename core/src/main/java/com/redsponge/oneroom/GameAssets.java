@@ -2,8 +2,13 @@ package com.redsponge.oneroom;
 
 import com.badlogic.gdx.assets.AssetManager;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
+import com.badlogic.gdx.graphics.g2d.TextureAtlas;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.redsponge.redengine.assets.Asset;
 import com.redsponge.redengine.assets.AssetSpecifier;
+import com.redsponge.redengine.assets.atlas.AtlasAnimation;
+import com.redsponge.redengine.assets.atlas.AtlasFrame;
 
 public class GameAssets extends AssetSpecifier {
 
@@ -14,11 +19,20 @@ public class GameAssets extends AssetSpecifier {
     @Asset("room/room_background.png")
     private Texture roomTexture;
 
-    @Asset("lever/on.png")
+    @Asset("lever/open_1.png")
     private Texture leverOnTexture;
 
-    @Asset("lever/off.png")
+    @Asset("lever/close.png")
     private Texture leverOffTexture;
+
+    @Asset("textures/textures.atlas")
+    private TextureAtlas textures;
+
+    @AtlasAnimation(animationName = "lever/open", atlas = "textures", length = 4, frameDuration = 0.15f)
+    private Animation<TextureRegion> leverOn;
+
+    @AtlasFrame(frameName = "lever/close", atlas = "textures")
+    private TextureRegion leverOff;
 
     @Asset("hints/press_x.png")
     private Texture hintPressX;
@@ -34,4 +48,7 @@ public class GameAssets extends AssetSpecifier {
 
     @Asset("computer/computer_happy.png")
     private Texture computerHappy;
+
+    @Asset("room/iron.png")
+    private Texture backgroundTile;
 }

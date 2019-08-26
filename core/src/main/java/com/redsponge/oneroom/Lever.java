@@ -2,10 +2,15 @@ package com.redsponge.oneroom;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector2;
+import com.redsponge.redengine.lighting.LightSystem;
+import com.redsponge.redengine.lighting.LightTextures;
+import com.redsponge.redengine.lighting.LightType;
 import com.redsponge.redengine.screen.INotified;
 import com.redsponge.redengine.screen.ScreenEntity;
 import com.redsponge.redengine.utils.IntVector2;
@@ -15,8 +20,8 @@ public class Lever extends ScreenEntity implements INotified {
 
     private boolean on;
 
-    private Texture offTex;
-    private Texture onTex;
+    private TextureRegion offTex;
+    private Animation<TextureRegion> onTex;
 
     private Texture hintX;
 
@@ -35,6 +40,7 @@ public class Lever extends ScreenEntity implements INotified {
 
     private IToggleable toggleable;
     private Runnable onToggle;
+    private float activeTime;
 
     private static Color tmpC = Color.WHITE.cpy();
 
@@ -58,8 +64,8 @@ public class Lever extends ScreenEntity implements INotified {
 
     @Override
     public void loadAssets() {
-        offTex = assets.get("leverOffTexture", Texture.class);
-        onTex = assets.get("leverOnTexture", Texture.class);
+        offTex = assets.getTextureRegion("leverOff");
+        onTex = assets.getAnimation("leverOn");
         hintX = assets.get("hintPressX", Texture.class);
     }
 
@@ -94,11 +100,16 @@ public class Lever extends ScreenEntity implements INotified {
             timeAwayFromPlayer += v;
             timeNearPlayer = 0;
         }
+        if(on) {
+            activeTime += v;
+        } else {
+            activeTime = 0;
+        }
     }
 
     @Override
     public void render() {
-        Texture tex = on ? onTex : offTex;
+        TextureRegion tex = on ? onTex.getKeyFrame(activeTime) : offTex;
         batch.draw(tex, pos.x, pos.y, WIDTH, HEIGHT);
 
         if(isNearPlayer) {
