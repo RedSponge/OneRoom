@@ -34,6 +34,7 @@ public class Lever extends ScreenEntity implements INotified {
     private boolean inverted;
 
     private IToggleable toggleable;
+    private Runnable onToggle;
 
     private static Color tmpC = Color.WHITE.cpy();
 
@@ -69,10 +70,17 @@ public class Lever extends ScreenEntity implements INotified {
             Logger.log(this, inverted != on);
             toggleable.setEnabled(inverted != on);
         }
+        if(onToggle != null) {
+            onToggle.run();
+        }
     }
 
     public void setOn(boolean on) {
         this.on = on;
+    }
+
+    public boolean isOn() {
+        return on;
     }
 
     @Override
@@ -128,5 +136,9 @@ public class Lever extends ScreenEntity implements INotified {
 
     public void setInverted(boolean inverted) {
         this.inverted = inverted;
+    }
+
+    public void setOnToggle(Runnable onToggle) {
+        this.onToggle = onToggle;
     }
 }

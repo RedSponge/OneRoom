@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Vector3;
 import com.redsponge.redengine.input.SimpleInputTranslator;
 import com.redsponge.redengine.physics.PActor;
@@ -13,6 +14,9 @@ import com.redsponge.redengine.physics.PhysicsWorld;
 import com.redsponge.redengine.screen.ScreenEntity;
 import com.redsponge.redengine.utils.IntVector2;
 import com.redsponge.redengine.utils.Logger;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 public class Player extends ScreenEntity {
 
@@ -27,6 +31,15 @@ public class Player extends ScreenEntity {
     private Texture texture;
     private TextureRegion tr;
     private boolean left;
+
+    private boolean isJumping;
+    private float jumpTime;
+    private float minJumpTime = 0.05f;
+    private float maxJumpTime = 0.3f;
+
+    private boolean onGround;
+
+    private Method collideFirst;
 
     public Player(SpriteBatch batch, ShapeRenderer shapeRenderer) {
         super(batch, shapeRenderer);
@@ -44,6 +57,12 @@ public class Player extends ScreenEntity {
         actor.pos.set(100, 100);
 
         vel = new IntVector2();
+        try {
+            collideFirst = actor.getClass().getDeclaredMethod("collideFirst", IntVector2.class);
+            collideFirst.setAccessible(true);
+        } catch (NoSuchMethodException e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
@@ -52,17 +71,30 @@ public class Player extends ScreenEntity {
         tr = new TextureRegion(texture);
     }
 
+    IntVector2 tmpPos = new IntVector2();
+
     @Override
     public void tick(float v) {
-        vel.add(0, -5);
-        vel.x = (int) (input.getHorizontal() * 200);
-        if(input.getHorizontal() != 0) {
-            left = input.getHorizontal() < 0;
+        try {
+            onGround = collideFirst.invoke(actor, tmpPos.set(actor.pos).add(0, -1)) != null;
+        } catch (IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
+        progressJump(v);
+        if(isJumping) {
+            float jumpProgress = 1 - Interpolation.circleOut.apply(0, maxJumpTime, jumpTime);
+            vel.y = (int) (200 * jumpProgress);
+        } else {
+            vel.add(0, -20);
         }
 
-        if(input.isJustJumping()) {
-            vel.y = 60;
+        vel.x = (int) (input.getHorizontal() * 200);
+        if(input.getHorizontal() != 0) {
+            boolean left = input.getHorizontal() < 0;
+            if(left != this.left) notifyScreen(Notifications.PLAYER_TURN);
+            this.left = left;
         }
+
         if(Gdx.input.isKeyJustPressed(Keys.X)) {
             notifyScreen(Notifications.PLAYER_INTERACT);
         }
@@ -70,7 +102,26 @@ public class Player extends ScreenEntity {
         if(vel.y < -500) vel.y = -500;
 
         actor.moveX(vel.x * v, null);
-        actor.moveY(vel.y * v, () -> vel.y = 0);
+        actor.moveY(vel.y * v, () -> {
+            if(vel.y > 0) isJumping = false;
+            vel.y = 0;
+        });
+    }
+
+    private void progressJump(float delta) {
+        boolean jumpPressed = input.isJumping();
+        if(isJumping) {
+            jumpTime += delta;
+            if(jumpTime > minJumpTime && !jumpPressed || jumpTime > maxJumpTime) {
+                isJumping = false;
+            }
+        } else {
+            if(jumpPressed && onGround) {
+                isJumping = true;
+                onGround = false;
+                jumpTime = 0;
+            }
+        }
     }
 
     @Override

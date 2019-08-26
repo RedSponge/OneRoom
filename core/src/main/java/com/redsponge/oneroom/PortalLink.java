@@ -2,9 +2,10 @@ package com.redsponge.oneroom;
 
 import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
+import com.redsponge.redengine.screen.INotified;
 import com.redsponge.redengine.utils.Logger;
 
-public class PortalLink {
+public class PortalLink implements INotified {
 
     private Vector2 first, second;
     private boolean active;
@@ -13,12 +14,14 @@ public class PortalLink {
 
     private float radius;
     private Runnable onMoveThrough;
+    private boolean onXAxis;
 
-    public PortalLink(Vector2 first, Vector2 second, Vector3 camPos, float radius) {
+    public PortalLink(Vector2 first, Vector2 second, Vector3 camPos, float radius, boolean onXAxis) {
         this.first = first;
         this.second = second;
         this.camPos = camPos;
         this.radius = radius;
+        this.onXAxis = onXAxis;
     }
 
     private boolean inCircle(float x, float y, float cx, float cy, float cr) {
@@ -55,6 +58,14 @@ public class PortalLink {
             if(onMoveThrough != null) onMoveThrough.run();
         } else {
             active = false;
+        }
+    }
+
+    @Override
+    public void notified(int i) {
+        if(onXAxis && i == Notifications.PLAYER_TURN && active) {
+            active = false;
+            Logger.log(this, "REACTIVATE!");
         }
     }
 

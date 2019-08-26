@@ -25,4 +25,13 @@ public class GameAssets extends AssetSpecifier {
 
     @Asset("player/player.png")
     private Texture player;
+
+    @Asset("computer/computer_off.png")
+    private Texture computerOff;
+
+    @Asset("computer/computer_loading.png")
+    private Texture computerLoading;
+
+    @Asset("computer/computer_happy.png")
+    private Texture computerHappy;
 }
