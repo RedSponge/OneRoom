@@ -4,6 +4,7 @@ public enum ComputerState {
 
     OFF,
     LOADING,
+    ENTER_PASSWORD,
     HAPPY
 
 }

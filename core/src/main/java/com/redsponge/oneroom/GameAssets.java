@@ -28,10 +28,10 @@ public class GameAssets extends AssetSpecifier {
     @Asset("textures/textures.atlas")
     private TextureAtlas textures;
 
-    @AtlasAnimation(animationName = "lever/open", atlas = "textures", length = 4, frameDuration = 0.15f)
-    private Animation<TextureRegion> leverOn;
+    @AtlasFrame(frameName = "lever/on", atlas = "textures")
+    private TextureRegion leverOn;
 
-    @AtlasFrame(frameName = "lever/close", atlas = "textures")
+    @AtlasFrame(frameName = "lever/off", atlas = "textures")
     private TextureRegion leverOff;
 
     @Asset("hints/press_x.png")
@@ -48,6 +48,9 @@ public class GameAssets extends AssetSpecifier {
 
     @Asset("computer/computer_happy.png")
     private Texture computerHappy;
+
+    @Asset("computer/computer_enter_password.png")
+    private Texture computerEnterPassword;
 
     @Asset("room/iron.png")
     private Texture backgroundTile;

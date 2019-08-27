@@ -15,8 +15,11 @@ import com.redsponge.redengine.lighting.LightType;
 import com.redsponge.redengine.physics.PhysicsDebugRenderer;
 import com.redsponge.redengine.physics.PhysicsWorld;
 import com.redsponge.redengine.screen.AbstractScreen;
+import com.redsponge.redengine.screen.ScreenEntity;
 import com.redsponge.redengine.utils.GameAccessor;
 import com.redsponge.redengine.utils.MathUtilities;
+
+import java.lang.reflect.Field;
 
 public class GameScreen extends AbstractScreen {
 
@@ -41,7 +44,7 @@ public class GameScreen extends AbstractScreen {
     private DelayedRemovalArray<PortalLink> portals;
 
     private Player player;
-    private ComputerScreen computerScreen;
+    private Computer computerScreen;
     private Texture wood;
     private Vector3 camTarget = new Vector3();
 
@@ -51,32 +54,47 @@ public class GameScreen extends AbstractScreen {
         super(ga);
     }
 
+    boolean first = true;
     @Override
     public void show() {
-        viewport = new FitViewport(WIDTH, HEIGHT);
-        addSystem(LightSystem.class, WIDTH, HEIGHT, batch);
-        ls = getSystem(LightSystem.class);
-        ls.registerLightType(LightType.MULTIPLICATIVE);
-        ls.setAmbianceColor(Color.GRAY, LightType.MULTIPLICATIVE);
+        if(first) {
+            first = false;
+            viewport = new FitViewport(WIDTH, HEIGHT);
+            addSystem(LightSystem.class, WIDTH, HEIGHT, batch);
+            ls = getSystem(LightSystem.class);
+            ls.registerLightType(LightType.MULTIPLICATIVE);
+            ls.setAmbianceColor(Color.GRAY, LightType.MULTIPLICATIVE);
+
+
+            pWorld = new PhysicsWorld();
+            walls = new DelayedRemovalArray<>();
+            portals = new DelayedRemovalArray<>();
+
+            pdr = new PhysicsDebugRenderer();
+
+            player = new Player(batch, shapeRenderer);
+            addEntity(player);
+
+            computerScreen = new Computer(batch, shapeRenderer, ga);
+            addEntity(computerScreen);
+            setupFirstStage();
+            setupSecondStage();
+            setupThirdStage();
+        } else {
+            try {
+                Field f = AbstractScreen.class.getDeclaredField("entities");
+                f.setAccessible(true);
+                for (ScreenEntity screenEntity : (DelayedRemovalArray<ScreenEntity>) f.get(this)) {
+                    screenEntity.loadAssets();
+                    System.out.println(screenEntity.getClass());
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
 
         roomTexture = assets.get("roomTexture", Texture.class);
         wood = assets.get("backgroundTile", Texture.class);
-
-        pWorld = new PhysicsWorld();
-        walls = new DelayedRemovalArray<>();
-        portals = new DelayedRemovalArray<>();
-
-        pdr = new PhysicsDebugRenderer();
-
-        player = new Player(batch, shapeRenderer);
-        addEntity(player);
-
-        computerScreen = new ComputerScreen(batch, shapeRenderer);
-        addEntity(computerScreen);
-
-        setupFirstStage();
-//        setupSecondStage();
-//        setupThirdStage();
     }
 
     private void setupFirstStage() {
@@ -151,7 +169,12 @@ public class GameScreen extends AbstractScreen {
         addWall((ROOM_WIDTH + (WIDTH - ROOM_WIDTH) / 2), 60, WIDTH + (WIDTH - ROOM_WIDTH), HEIGHT);
 
         PortalLink pl = addPortal(WIDTH / 2f, - HEIGHT, WIDTH / 2f, HEIGHT * 2, 30, false);
-        pl.setOnMoveThrough(this::setupThirdStage);
+        pl.setOnMoveThrough(() -> {
+            setupThirdStage();
+            if(computerScreen.getState() != ComputerState.OFF) {
+                setupFourthStage();
+            }
+        });
         Lever lever = new Lever(batch, shapeRenderer);
         lever.setInverted(true);
         lever.setAttachedToggleable(toggleableWall);
@@ -160,25 +183,29 @@ public class GameScreen extends AbstractScreen {
         lever.getPos().set(WIDTH / 4, (HEIGHT - ROOM_HEIGHT) / 2);
     }
 
-
     boolean thirdStage;
     private void setupThirdStage() {
         if(thirdStage) return;
         thirdStage = true;
 
-        addWall(WIDTH / 2 - 50, HEIGHT / 4, 100, 10);
+        addWall(WIDTH / 2 - 50, HEIGHT / 2, 100, 10);
 
-        addWall(WIDTH / 4 - 25, HEIGHT / 4, 50, 10);
-        addWall(WIDTH / 4 - 25 - 50, (int) (HEIGHT / 4 * 1.5f), 50, 10);
-        addWall(WIDTH / 4 - 25, HEIGHT / 2, 50, 10);
-        addWall(WIDTH / 4 - 25 - 50, (int) (HEIGHT / 4 * 2.5f), 50, 10);
-        addWall(WIDTH / 4 - 25, HEIGHT / 4 * 3, 50, 10);
 
-        addWall(WIDTH / 4 * 3 - 25, HEIGHT / 4, 50, 10);
-        addWall(WIDTH / 4 * 3 - 25 + 50, (int) (HEIGHT / 4 * 1.5f), 50, 10);
-        addWall(WIDTH / 4 * 3 - 25, HEIGHT / 2, 50, 10);
-        addWall(WIDTH / 4 * 3 - 25 + 50, (int) (HEIGHT / 4 * 2.5f), 50, 10);
-        addWall(WIDTH / 4 * 3 - 25, HEIGHT / 4 * 3, 50, 10);
+        Wall[] left = {
+                addWall(WIDTH / 4 - 25, HEIGHT / 4, 50, 10),
+                addWall(WIDTH / 4 - 25 - 50, (int) (HEIGHT / 4 * 1.5f), 50, 10),
+                addWall(WIDTH / 4 - 25, HEIGHT / 2, 50, 10),
+                addWall(WIDTH / 4 - 25 - 50, (int) (HEIGHT / 4 * 2.5f), 50, 10),
+                addWall(WIDTH / 4 - 25, HEIGHT / 4 * 3, 50, 10),
+        };
+
+        Wall[] right = {
+                addWall(WIDTH / 4 * 3 - 25, HEIGHT / 4, 50, 10),
+                addWall(WIDTH / 4 * 3 - 25 + 50, (int) (HEIGHT / 4 * 1.5f), 50, 10),
+                addWall(WIDTH / 4 * 3 - 25, HEIGHT / 2, 50, 10),
+                addWall(WIDTH / 4 * 3 - 25 + 50, (int) (HEIGHT / 4 * 2.5f), 50, 10),
+                addWall(WIDTH / 4 * 3 - 25, HEIGHT / 4 * 3, 50, 10),
+        };
 
         Lever l = new Lever(batch, shapeRenderer);
         addEntity(l);
@@ -197,9 +224,43 @@ public class GameScreen extends AbstractScreen {
             }
         };
 
-        l.setOnToggle(onToggle);
-        l2.setOnToggle(onToggle);
+        l.setOnToggle(() -> {
+            for (Wall wall : left) {
+                wall.remove();
+                walls.removeValue(wall, true);
+            }
+            onToggle.run();
+        });
+        l2.setOnToggle(() -> {
+            for (Wall wall : right) {
+                wall.remove();
+                walls.removeValue(wall, true);
+            }
+            onToggle.run();
+        });
 
+    }
+
+    boolean fourthStage;
+    private void setupFourthStage() {
+        if(fourthStage) return;
+        fourthStage = true;
+
+        addWall(WIDTH / 4 - 60, HEIGHT / 4 * 3, 10, 20);
+        addWall(WIDTH / 4 - 30, HEIGHT / 4 * 3, 20, 20);
+        addWall(WIDTH / 4, HEIGHT / 4 * 3, 20, 20);
+
+        addWall(WIDTH / 4 * 3, HEIGHT / 4 * 3, 20, 20);
+        addWall(WIDTH / 4 * 3 + 30, HEIGHT / 4 * 3, 10, 20);
+        addWall(WIDTH / 4 * 3 + 60, HEIGHT / 4 * 3, 10, 20);
+
+        addWall(WIDTH / 4 - 60, HEIGHT / 4, 10, 20);
+        addWall(WIDTH / 4 - 30, HEIGHT / 4, 10, 20);
+        addWall(WIDTH / 4, HEIGHT / 4, 10, 20);
+
+        addWall(WIDTH / 4 * 3, HEIGHT / 4, 20, 20);
+        addWall(WIDTH / 4 * 3 + 30, HEIGHT / 4, 20, 20);
+        addWall(WIDTH / 4 * 3 + 60, HEIGHT / 4, 10, 20);
     }
 
     @Override
@@ -219,11 +280,6 @@ public class GameScreen extends AbstractScreen {
             }
         }
         batch.end();
-
-//        shapeRenderer.begin(ShapeType.Filled);
-//        shapeRenderer.setColor(BACKGROUND_COLOR);
-//        shapeRenderer.rect(-WIDTH * 2, -HEIGHT * 2, WIDTH * 5, HEIGHT * 5);
-//        shapeRenderer.end();
 
 //        renderRoom();
 
@@ -281,5 +337,14 @@ public class GameScreen extends AbstractScreen {
         for (PortalLink portal : portals) {
             portal.notified(notification);
         }
+    }
+
+    @Override
+    public boolean shouldDispose() {
+        return false;
+    }
+
+    public void computerPasswordIsCorrect() {
+        computerScreen.setState(ComputerState.HAPPY);
     }
 }
