@@ -1,6 +1,7 @@
 package com.redsponge.oneroom;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -40,18 +41,66 @@ public class GameAssets extends AssetSpecifier {
     @Asset("player/player.png")
     private Texture player;
 
-    @Asset("computer/computer_off.png")
-    private Texture computerOff;
 
-    @Asset("computer/computer_loading.png")
+    @AtlasFrame(atlas = "textures", frameName = "computer/computer_off")
+    private TextureAtlas computerOff;
+
+    @AtlasFrame(atlas = "textures", frameName = "computer/computer_loading")
     private Texture computerLoading;
 
-    @Asset("computer/computer_happy.png")
+    @AtlasFrame(atlas = "textures", frameName = "computer/computer_happy")
     private Texture computerHappy;
 
-    @Asset("computer/computer_enter_password.png")
+    @AtlasAnimation(atlas = "textures", animationName = "computer/computer_happy_talking", length = 2, frameDuration = 0.3f)
+    private Animation<TextureRegion> computerHappyTalk;
+
+    @AtlasAnimation(atlas = "textures", animationName = "computer/computer_happy_laugh", length = 2, frameDuration = 0.3f)
+    private Animation<TextureRegion> computerHappyLaugh;
+
+    @AtlasFrame(atlas = "textures", frameName = "computer/computer_passthrough_hint")
+    private TextureRegion computerMovethroughHint;
+
+    @AtlasFrame(atlas = "textures", frameName = "computer/computer_angry")
+    private TextureRegion computerAngry;
+
+    @AtlasAnimation(atlas = "textures", animationName = "computer/computer_angry_talk", length = 2, frameDuration = 0.3f)
+    private Animation<TextureRegion> computerAngryTalk;
+
+    @AtlasFrame(atlas = "textures", frameName = "computer/computer_enter_password")
     private Texture computerEnterPassword;
+
+    @AtlasFrame(atlas = "textures", frameName = "computer/textbox")
+    private Texture computerTextBox;
 
     @Asset("room/iron.png")
     private Texture backgroundTile;
+
+    @AtlasFrame(atlas = "textures", frameName = "lever/self_destruct")
+    private TextureRegion selfDestructButton;
+
+    @Asset("sounds/lever_toggle.ogg")
+    private Sound leverToggle;
+
+    @Asset("sounds/step.ogg")
+    private Sound playerStep;
+
+    @Asset("sounds/jump.ogg")
+    private Sound playerJump;
+
+    @Asset("sounds/land.ogg")
+    private Sound playerLand;
+
+    @Asset("sounds/computer_load.mp3")
+    private Sound computerLoad;
+
+    @Asset("sounds/computer_interact.ogg")
+    private Sound computerInteract;
+
+    @Asset("sounds/computer_talk.ogg")
+    private Sound computerTalk;
+
+    @Asset("sounds/wall_block.ogg")
+    private Sound wallBlock;
+
+
 }

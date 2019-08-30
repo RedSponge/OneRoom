@@ -1,5 +1,6 @@
 package com.redsponge.oneroom;
 
+import com.redsponge.oneroom.mechanics.IToggleable;
 import com.redsponge.redengine.physics.PEntity;
 import com.redsponge.redengine.physics.PSolid;
 import com.redsponge.redengine.physics.PhysicsWorld;

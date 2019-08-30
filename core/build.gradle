@@ -1,12 +1,12 @@
 [compileJava, compileTestJava]*.options*.encoding = 'UTF-8'
 eclipse.project.name = appName + '-core'
 
-repositories {
-	maven {url 'https://jitpack.io'}
-}
+//repositories {
+//	maven {url 'https://jitpack.io'}
+//}
 
 dependencies {
 	api "com.badlogicgames.gdx:gdx:$gdxVersion"
 	api "com.badlogicgames.gdx:gdx-ai:$aiVersion"
-	api "com.github.RedSponge:RedEngine:v0.5.1"
+	implementation 'com.github.RedSponge:RedEngine:master-SNAPSHOT'
 }

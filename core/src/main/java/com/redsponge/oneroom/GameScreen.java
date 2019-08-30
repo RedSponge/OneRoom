@@ -9,6 +9,12 @@ import com.badlogic.gdx.math.Vector2;
 import com.badlogic.gdx.math.Vector3;
 import com.badlogic.gdx.utils.DelayedRemovalArray;
 import com.badlogic.gdx.utils.viewport.FitViewport;
+import com.redsponge.oneroom.computer.Computer;
+import com.redsponge.oneroom.computer.ComputerState;
+import com.redsponge.oneroom.mechanics.Lever;
+import com.redsponge.oneroom.mechanics.SelfDestructButton;
+import com.redsponge.oneroom.player.Player;
+import com.redsponge.oneroom.player.PortalLink;
 import com.redsponge.redengine.assets.AssetSpecifier;
 import com.redsponge.redengine.lighting.LightSystem;
 import com.redsponge.redengine.lighting.LightType;
@@ -16,8 +22,9 @@ import com.redsponge.redengine.physics.PhysicsDebugRenderer;
 import com.redsponge.redengine.physics.PhysicsWorld;
 import com.redsponge.redengine.screen.AbstractScreen;
 import com.redsponge.redengine.screen.ScreenEntity;
+import com.redsponge.redengine.transitions.Transitions;
 import com.redsponge.redengine.utils.GameAccessor;
-import com.redsponge.redengine.utils.MathUtilities;
+import com.redsponge.redengine.utils.Logger;
 
 import java.lang.reflect.Field;
 
@@ -31,7 +38,7 @@ public class GameScreen extends AbstractScreen {
     public static final int WIDTH = 640;
     public static final int HEIGHT = (int) (WIDTH / ASPECT_RATIO);
 
-    private static final Color WALLS_COLOR = new Color(0.75f, 0.75f, 0.7f, 1);
+    private static final Color WALLS_COLOR = new Color(0.7f, 0.7f, 0.7f, 1);
     private static final Color BACKGROUND_COLOR = new Color(237 / 255f, 237 / 255f, 237 / 255f, 1);
 
     private PhysicsDebugRenderer pdr;
@@ -48,7 +55,17 @@ public class GameScreen extends AbstractScreen {
     private Texture wood;
     private Vector3 camTarget = new Vector3();
 
+    private FitViewport guiViewport;
+
     private LightSystem ls;
+
+    private Lever bottomTopLever;
+    private Wall[] binaryHints;
+
+    private String currentGuessedPassword;
+    private Wall centralPlatform;
+
+    private GradualMusicHandler gmh;
 
     public GameScreen(GameAccessor ga) {
         super(ga);
@@ -59,11 +76,18 @@ public class GameScreen extends AbstractScreen {
     public void show() {
         if(first) {
             first = false;
+            gmh = new GradualMusicHandler("music/1.wav", "music/2.wav", "music/4.wav", "music/5.wav", "music/6.wav");
+
             viewport = new FitViewport(WIDTH, HEIGHT);
+            viewport.apply(true);
+            guiViewport = new FitViewport(WIDTH, HEIGHT);
             addSystem(LightSystem.class, WIDTH, HEIGHT, batch);
+
             ls = getSystem(LightSystem.class);
             ls.registerLightType(LightType.MULTIPLICATIVE);
-            ls.setAmbianceColor(Color.GRAY, LightType.MULTIPLICATIVE);
+            ls.setAmbianceColor(Color.LIGHT_GRAY, LightType.MULTIPLICATIVE);
+
+            ls.registerLightType(LightType.ADDITIVE);
 
 
             pWorld = new PhysicsWorld();
@@ -79,13 +103,23 @@ public class GameScreen extends AbstractScreen {
             addEntity(computerScreen);
             setupFirstStage();
             setupSecondStage();
-            setupThirdStage();
+//            setupThirdStage();
+            computerPasswordIsCorrect();
+            summonTrollExitSwitch();
+            setupGravityFlipPlatforms();
+            didTroll = true;
+            didThatWasFun = true;
+            thirdStage = true;
+            computerScreen.getTalk().skipToTheEnd();
+            centralPlatform = addWall(WIDTH / 2 - 60, HEIGHT / 2, 120, 10);
+            currentGuessedPassword = "2143";
+            computerScreen.setState(ComputerState.MOVE_THROUGH_HINT);
         } else {
             try {
                 Field f = AbstractScreen.class.getDeclaredField("entities");
                 f.setAccessible(true);
                 for (ScreenEntity screenEntity : (DelayedRemovalArray<ScreenEntity>) f.get(this)) {
-                    screenEntity.loadAssets();
+                    screenEntity.setAssets(assets);
                     System.out.println(screenEntity.getClass());
                 }
             } catch (Exception e) {
@@ -98,6 +132,7 @@ public class GameScreen extends AbstractScreen {
     }
 
     private void setupFirstStage() {
+        gmh.transitionTo(0);
         addWall(-WIDTH * 2, 0, WIDTH * 5, (HEIGHT - ROOM_HEIGHT) / 2);
         addWall(-WIDTH * 2, (ROOM_HEIGHT + (HEIGHT - ROOM_HEIGHT) / 2), WIDTH * 5, (HEIGHT - ROOM_HEIGHT) / 2);
 
@@ -105,7 +140,17 @@ public class GameScreen extends AbstractScreen {
         addWall((ROOM_WIDTH + (WIDTH - ROOM_WIDTH) / 2), 60, WIDTH + (WIDTH - ROOM_WIDTH), HEIGHT);
 
         PortalLink portal = addPortal(WIDTH * 1.6f, 40, WIDTH * -0.4f, 40, 25, true);
-        portal.setOnMoveThrough(this::setupSecondStage);
+        portal.setOnMoveThrough(() -> {
+            if(computerScreen.getState() == ComputerState.MOVE_THROUGH_HINT) {
+                if(player.getPos().x < 0) {
+                    currentGuessedPassword += "2";
+                } else {
+                    currentGuessedPassword += "4";
+                }
+                checkMoveThroughPuzzle();
+            }
+            setupSecondStage();
+        });
     }
 
     private PortalLink addPortal(float x1, float y1, float x2, float y2, float r, boolean onXAxis) {
@@ -114,7 +159,7 @@ public class GameScreen extends AbstractScreen {
         return pl;
     }
 
-    private Wall addWall(int x, int y, int w, int h) {
+    public Wall addWall(int x, int y, int w, int h) {
         Wall wa = new Wall(pWorld, x, y, w, h);
         pWorld.addSolid(wa);
         walls.add(wa);
@@ -124,11 +169,11 @@ public class GameScreen extends AbstractScreen {
 
     @Override
     public void tick(float v) {
-        tickEntities(v);
-        pWorld.update(v);
         for (PortalLink portal : portals) {
             portal.processPlayer(player);
         }
+        pWorld.update(v);
+        tickEntities(v);
 
         if(player.getPos().x > ROOM_WIDTH + (WIDTH - ROOM_WIDTH) / 2 || player.getPos().x < (WIDTH - ROOM_WIDTH) / 2) {
             camTarget.x = player.getPos().x;
@@ -143,8 +188,7 @@ public class GameScreen extends AbstractScreen {
         }
 
         Vector3 camPos = viewport.getCamera().position;
-        camPos.x = MathUtilities.lerp(camPos.x, camTarget.x, 0.1f);
-        camPos.y = MathUtilities.lerp(camPos.y, camTarget.y, 0.1f);
+        camPos.set(camTarget);
     }
 
 
@@ -174,6 +218,14 @@ public class GameScreen extends AbstractScreen {
             if(computerScreen.getState() != ComputerState.OFF) {
                 setupFourthStage();
             }
+            if(computerScreen.getState() == ComputerState.MOVE_THROUGH_HINT) {
+                if(player.getPos().y < 0) {
+                    currentGuessedPassword += "1";
+                } else {
+                    currentGuessedPassword += "3";
+                }
+                checkMoveThroughPuzzle();
+            }
         });
         Lever lever = new Lever(batch, shapeRenderer);
         lever.setInverted(true);
@@ -181,6 +233,58 @@ public class GameScreen extends AbstractScreen {
 
         addEntity(lever);
         lever.getPos().set(WIDTH / 4, (HEIGHT - ROOM_HEIGHT) / 2);
+        bottomTopLever = lever;
+    }
+
+    private void checkMoveThroughPuzzle() {
+        Logger.log(this, currentGuessedPassword);
+        if(currentGuessedPassword.contains("2143")) {
+            setupLastStage();
+        }
+    }
+
+    boolean lastStage;
+    private void setupLastStage() {
+        if(lastStage) return;
+        gmh.transitionTo(2);
+        lastStage = true;
+        for (Wall gravityWall : gravityWalls) {
+            gravityWall.remove();
+            walls.removeValue(gravityWall, true);
+        }
+        computerScreen.setState(ComputerState.ANGRY);
+        SelfDestructButton sdb = new SelfDestructButton(batch, shapeRenderer);
+        addEntity(sdb);
+        sdb.getPos().set((WIDTH - ROOM_WIDTH) / 2, HEIGHT / 2);
+        addWall((WIDTH - ROOM_WIDTH) / 2, HEIGHT / 2 - 48, 60, 10);
+        addWall((WIDTH - ROOM_WIDTH) / 2, HEIGHT / 2 + 48, 60, 10);
+        Wall opened = addWall((WIDTH - ROOM_WIDTH) / 2 + 60, HEIGHT / 2 - 48, 10, 106);
+        Lever l = new Lever(batch, shapeRenderer);
+        l.setAttachedToggleable(opened);
+        l.setInverted(true);
+        addEntity(l);
+        l.getPos().set(WIDTH - (WIDTH - ROOM_WIDTH) / 2 - Lever.WIDTH, HEIGHT / 2);
+
+        centralPlatform.remove();
+        walls.removeValue(centralPlatform, true);
+
+        MovingWall[] movingWalls = new MovingWall[]{
+                new MovingWall(pWorld, (int) (WIDTH / 4 * 2.5f), HEIGHT / 2 - 80, 50, 10),
+                new MovingWall(pWorld, (int) (WIDTH / 4 * 3f), HEIGHT / 2 - 80, 50, 10),
+                new MovingWall(pWorld, (int) (WIDTH / 4 * 2f), HEIGHT / 2 - 80, 50, 10),
+                new MovingWall(pWorld, (int) (WIDTH / 4 * 1.5f), HEIGHT / 2 - 80, 50, 10),
+        };
+        for (MovingWall movingWall : movingWalls) {
+            walls.add(movingWall);
+            pWorld.addSolid(movingWall);
+        }
+
+        l.setOnToggle(() -> {
+            computerScreen.shoutDudeStop();
+            for (MovingWall movingWall : movingWalls) {
+                movingWall.setActive(true);
+            }
+        });
     }
 
     boolean thirdStage;
@@ -188,7 +292,7 @@ public class GameScreen extends AbstractScreen {
         if(thirdStage) return;
         thirdStage = true;
 
-        addWall(WIDTH / 2 - 50, HEIGHT / 2, 100, 10);
+        centralPlatform = addWall(WIDTH / 2 - 50, HEIGHT / 2, 100, 10);
 
 
         Wall[] left = {
@@ -243,24 +347,26 @@ public class GameScreen extends AbstractScreen {
 
     boolean fourthStage;
     private void setupFourthStage() {
-        if(fourthStage) return;
+        if(fourthStage || computerScreen.getState() != ComputerState.ENTER_PASSWORD && computerScreen.getState() != ComputerState.LOADING) return;
         fourthStage = true;
 
-        addWall(WIDTH / 4 - 60, HEIGHT / 4 * 3, 10, 20);
-        addWall(WIDTH / 4 - 30, HEIGHT / 4 * 3, 20, 20);
-        addWall(WIDTH / 4, HEIGHT / 4 * 3, 20, 20);
+        this.binaryHints = new Wall[]{
+                addWall(WIDTH / 4 - 60, HEIGHT / 4 * 3, 10, 20),
+                addWall(WIDTH / 4 - 30, HEIGHT / 4 * 3, 20, 20),
+                addWall(WIDTH / 4, HEIGHT / 4 * 3, 20, 20),
 
-        addWall(WIDTH / 4 * 3, HEIGHT / 4 * 3, 20, 20);
-        addWall(WIDTH / 4 * 3 + 30, HEIGHT / 4 * 3, 10, 20);
-        addWall(WIDTH / 4 * 3 + 60, HEIGHT / 4 * 3, 10, 20);
+                addWall(WIDTH / 4 * 3, HEIGHT / 4 * 3, 20, 20),
+                addWall(WIDTH / 4 * 3 + 30, HEIGHT / 4 * 3, 10, 20),
+                addWall(WIDTH / 4 * 3 + 60, HEIGHT / 4 * 3, 10, 20),
 
-        addWall(WIDTH / 4 - 60, HEIGHT / 4, 10, 20);
-        addWall(WIDTH / 4 - 30, HEIGHT / 4, 10, 20);
-        addWall(WIDTH / 4, HEIGHT / 4, 10, 20);
+                addWall(WIDTH / 4 - 60, HEIGHT / 4, 10, 20),
+                addWall(WIDTH / 4 - 30, HEIGHT / 4, 10, 20),
+                addWall(WIDTH / 4, HEIGHT / 4, 10, 20),
 
-        addWall(WIDTH / 4 * 3, HEIGHT / 4, 20, 20);
-        addWall(WIDTH / 4 * 3 + 30, HEIGHT / 4, 20, 20);
-        addWall(WIDTH / 4 * 3 + 60, HEIGHT / 4, 10, 20);
+                addWall(WIDTH / 4 * 3, HEIGHT / 4, 20, 20),
+                addWall(WIDTH / 4 * 3 + 30, HEIGHT / 4, 20, 20),
+                addWall(WIDTH / 4 * 3 + 60, HEIGHT / 4, 10, 20),
+        };
     }
 
     @Override
@@ -296,8 +402,24 @@ public class GameScreen extends AbstractScreen {
         }
         shapeRenderer.end();
 
-//        ls.prepareMap(LightType.MULTIPLICATIVE, viewport);
-//        ls.renderToScreen(LightType.MULTIPLICATIVE);
+        ls.prepareMap(LightType.MULTIPLICATIVE, viewport);
+        ls.prepareMap(LightType.ADDITIVE, viewport);
+
+        ls.renderToScreen(LightType.MULTIPLICATIVE);
+        ls.renderToScreen(LightType.ADDITIVE);
+
+        renderGUI();
+//        pdr.render(pWorld, viewport.getCamera().combined);
+    }
+
+    private void renderGUI() {
+        guiViewport.apply();
+        batch.setProjectionMatrix(guiViewport.getCamera().combined);
+        shapeRenderer.setProjectionMatrix(guiViewport.getCamera().combined);
+
+        batch.begin();
+        computerScreen.renderToUI();
+        batch.end();
     }
 
     private void renderRoom() {
@@ -315,6 +437,7 @@ public class GameScreen extends AbstractScreen {
     @Override
     public void resize(int width, int height) {
         viewport.update(width, height);
+        guiViewport.update(width, height, true);
         ls.resize(width, height);
     }
 
@@ -344,7 +467,60 @@ public class GameScreen extends AbstractScreen {
         return false;
     }
 
+    @Override
+    public void dispose() {
+        gmh.dispose();
+    }
+
     public void computerPasswordIsCorrect() {
         computerScreen.setState(ComputerState.HAPPY);
+        gmh.transitionTo(1);
+        if(binaryHints != null) {
+            for (Wall binaryHint : binaryHints) {
+                binaryHint.remove();
+                walls.removeValue(binaryHint, true);
+            }
+        }
+    }
+
+    boolean didTroll = false;
+    boolean didThatWasFun = false;
+
+    public void summonTrollExitSwitch() {
+        Lever l = new Lever(batch, shapeRenderer);
+        addEntity(l);
+        l.getPos().set(WIDTH / 4 * 3, (HEIGHT - ROOM_HEIGHT) / 2);
+        l.setOnToggle(() -> {
+            player.toggleGravity();
+            if(!didTroll) {
+                computerScreen.doTalk("SIKE!!!{WAIT} THIS SWITCH JUST FLIPS GRAVITY! {WAIT=1} ", true, null, null);
+                computerScreen.setShouldGravityTaunt(true);
+                computerScreen.setTimeUntilGravityTaunt(10);
+                didTroll = true;
+            } else if(!didThatWasFun) {
+                computerScreen.doTalk("Alright, that was fun{WAIT=3} ", true, null, () ->
+                        computerScreen.doTalk("Hey can I real-talk with you for a second?{WAIT=1} <ACTIVATING REAL-TALK MODE...>{WAIT=3} ", false, null, () ->
+                            computerScreen.doTalk("If you see a big red button called 'SELF-DESTRUCT'..{WAIT=2} DON'T PRESS IT{WAIT}.{WAIT}.{WAIT}.{WAIT=3} please{WAIT=2} ", false, null, () -> {
+                                computerScreen.doTalk("<DEACTIVATING REAL-TALK MODE...>{WAIT=2} Anyways real talk over. Time to go back to being annoying{WAIT=2} If you could completely ignore the thing that I'm about to show you it will be very appreciated, Thanks!{WAIT=3} ", null, () -> {
+                                    computerScreen.setState(ComputerState.MOVE_THROUGH_HINT);
+                                });
+                            })
+                                ));
+                didThatWasFun = true;
+            }
+        });
+    }
+
+    Wall[] gravityWalls;
+
+    public void setupGravityFlipPlatforms() {
+        gravityWalls = new Wall[] {
+                addWall(150, HEIGHT / 3, 50, 10)
+        };
+    }
+
+    public void playEndAnimation() {
+        gmh.dispose();
+        ga.transitionTo(new EndAnimationScreen(ga), Transitions.linearFade(5, batch, shapeRenderer));
     }
 }

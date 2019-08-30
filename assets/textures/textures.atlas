@@ -1,6 +1,110 @@
 
 textures.png
-size: 64,32
+size: 1024,64
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+computer/computer_angry
+  rotate: false
+  xy: 2, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+computer/computer_angry_talk
+  rotate: false
+  xy: 68, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: 1
+computer/computer_angry_talk
+  rotate: false
+  xy: 134, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: 2
+computer/computer_enter_password
+  rotate: false
+  xy: 200, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+computer/computer_enter_password_fullscreen
+  rotate: false
+  xy: 794, 14
+  size: 64, 36
+  orig: 64, 36
+  offset: 0, 0
+  index: -1
+computer/computer_happy
+  rotate: false
+  xy: 266, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+computer/computer_happy_laugh
+  rotate: false
+  xy: 332, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: 1
+computer/computer_happy_laugh
+  rotate: false
+  xy: 398, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: 2
+computer/computer_happy_talking
+  rotate: false
+  xy: 464, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: 1
+computer/computer_happy_talking
+  rotate: false
+  xy: 530, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: 2
+computer/computer_loading
+  rotate: false
+  xy: 596, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+computer/computer_off
+  rotate: false
+  xy: 662, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+computer/computer_passthrough_hint
+  rotate: false
+  xy: 728, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
+computer/textbox
+  rotate: false
+  xy: 860, 34
+  size: 16, 16
+  orig: 16, 16
+  offset: 0, 0
+  index: -1
+
+textures2.png
+size: 64,64
 format: RGBA8888
 filter: Nearest,Nearest
 repeat: none
@@ -13,13 +117,20 @@ lever/off
   index: -1
 lever/on
   rotate: false
-  xy: 20, 2
+  xy: 36, 36
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
   index: -1
+lever/self_destruct
+  rotate: false
+  xy: 2, 20
+  size: 32, 32
+  orig: 32, 32
+  offset: 0, 0
+  index: -1
 
-textures2.png
+textures3.png
 size: 32,16
 format: RGBA8888
 filter: Nearest,Nearest

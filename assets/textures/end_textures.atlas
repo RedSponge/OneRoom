@@ -1,0 +1,48 @@
+
+end_textures.png
+size: 1024,64
+format: RGBA8888
+filter: Nearest,Nearest
+repeat: none
+end
+  rotate: false
+  xy: 2, 2
+  size: 96, 54
+  orig: 96, 54
+  offset: 0, 0
+  index: 1
+end
+  rotate: false
+  xy: 100, 2
+  size: 96, 54
+  orig: 96, 54
+  offset: 0, 0
+  index: 2
+end
+  rotate: false
+  xy: 198, 2
+  size: 96, 54
+  orig: 96, 54
+  offset: 0, 0
+  index: 3
+end
+  rotate: false
+  xy: 296, 2
+  size: 96, 54
+  orig: 96, 54
+  offset: 0, 0
+  index: 4
+end
+  rotate: false
+  xy: 394, 2
+  size: 96, 54
+  orig: 96, 54
+  offset: 0, 0
+  index: 5
+end
+  rotate: false
+  xy: 492, 2
+  size: 96, 54
+  orig: 96, 54
+  offset: 0, 0
+  index: 6
