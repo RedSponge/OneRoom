@@ -61,9 +61,11 @@ public class Computer extends ScreenEntity {
     private Sound interactSound;
     private Sound talkSound;
     private Sound wallBlockSound;
+    private Sound staticSound;
 
     private ActivateableLight light;
     private LightSystem ls;
+
 
     public Computer(SpriteBatch batch, ShapeRenderer shapeRenderer, GameAccessor ga) {
         super(batch, shapeRenderer);
@@ -72,8 +74,6 @@ public class Computer extends ScreenEntity {
 
     @Override
     public void loadAssets() {
-        TextureAtlas atlas = assets.get("textures", TextureAtlas.class);
-        
         off = assets.getTextureRegion("computerOff");
         loading = assets.getTextureRegion("computerLoading");
         enterPassword = assets.getTextureRegion("computerEnterPassword");
@@ -89,6 +89,7 @@ public class Computer extends ScreenEntity {
         interactSound = assets.get("computerInteract", Sound.class);
         talkSound = assets.get("computerTalk", Sound.class);
         wallBlockSound = assets.get("wallBlock", Sound.class);
+        staticSound = assets.get("staticSound", Sound.class);
     }
 
     @Override
@@ -140,9 +141,9 @@ public class Computer extends ScreenEntity {
             }
         }
         if(state == ComputerState.HAPPY && !saidWelcome) {
-            doTalk("Welcome Test Subject {SPEED=0.1}#5555515{NORMAL}.{WAIT} I hope you find this place cozy, since you're never going to leave it.{WAIT=5} ",
-                    null, () -> doTalk("{WAIT=3} Nope{WAIT}.{WAIT}.{WAIT}.{WAIT} Never gonna let you leave.{WAIT=5} ",
-                            null, () -> doTalk("Ok I'm bored.{WAIT} If you want to leave{EVENT=summon_troll_exit_switch} here's the door opening switch.{WAIT=5} ",
+            doTalk("Welcome Test Subject {SPEED=0.1}#5555515{NORMAL} to experiment {SPEED=0.1}#112435782{NORMAL}: \"No Escape\".{WAIT} I hope you find this place cozy, since,{WAIT} as you might have noticed,{WAIT} you cannot leave it{WAIT=4} ",
+                    null, () -> doTalk("Yup{SPEED=0.5}...{NORMAL}{WAIT} Cool right?{WAIT} You can never leave this place.{WAIT} Just you and me...{WAIT} Forever...{WAIT=5} ",
+                            null, () -> doTalk("Ok nevermind, I'm bored...{WAIT} If you want to leave the exit switch{EVENT=summon_troll_exit_switch} will be over there :){WAIT=3} ",
                                 (s) -> {if(s.equals("summon_troll_exit_switch")) ((GameScreen)screen).summonTrollExitSwitch();},
                                 () -> {
                                     talking = false;
@@ -154,10 +155,11 @@ public class Computer extends ScreenEntity {
         if(shouldGravityTaunt) {
             timeUntilGravityTaunt -= v;
             if(timeUntilGravityTaunt <= 0){
-                doTalk("Hahahah you look so helpless..{WAIT=3} ", true, null,
-          () -> doTalk("Hey, don't give me that look!{WAIT=3} ", null,
-          () -> doTalk("Sigh.. fine..{WAIT} I'll let you climb to your switch{WAIT} hang on...{WAIT=2} {EVENT=build_gravity_platforms}There.{WAIT} ",
-                (s) -> ((GameScreen)screen).setupGravityFlipPlatforms(), null)));
+                    doTalk("Hahahah you look so helpless stuck like that..{WAIT=3} ", true,null,
+          () -> doTalk("I can't believe you actually fell for that!{WAIT} How stupid can one be?!{WAIT} Hahahahahhaha{WAIT=3} ", true, null,
+          () -> doTalk("Hey, don't give me that look!{WAIT} I am just saying the truth...{WAIT=3} ", null,
+          () -> doTalk("{SLOW}{SHAKE=1;2;2}Uuuughhh{ENDSHAKE}{NORMAL} fine..{WAIT} I'll let you climb to your switch{WAIT} hang on...{WAIT=2} There{EVENT=build_gravity_platforms}.{WAIT} ",
+                (s) -> ((GameScreen)screen).setupGravityFlipPlatforms(), null))));
                 shouldGravityTaunt = false;
             }
         }
@@ -273,6 +275,7 @@ public class Computer extends ScreenEntity {
 
     public void setState(ComputerState state) {
         this.state = state;
+//        staticSound.play(0.2f);
         if(state == ComputerState.ANGRY) {
             light.getColor().set(.2f, 0, 0, 1);
         } else {
@@ -293,7 +296,7 @@ public class Computer extends ScreenEntity {
         if(saidDudeStop) return;
         saidDudeStop = true;
 
-        doTalk("Dude...{WAIT=2} What..{WAIT} Are you doing...?{WAIT=2} ", null, null);
+        doTalk("Dude...{WAIT=2} You're not thinking about pressing this button right..?{WAIT=2} ", null, null);
     }
 
     public boolean isSaidDontDare() {

@@ -102,5 +102,8 @@ public class GameAssets extends AssetSpecifier {
     @Asset("sounds/wall_block.ogg")
     private Sound wallBlock;
 
+    @Asset("sounds/static.ogg")
+    private Sound staticSound;
+
 
 }

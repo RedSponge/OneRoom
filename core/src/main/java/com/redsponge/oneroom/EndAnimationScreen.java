@@ -5,12 +5,10 @@ import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
-import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.redsponge.redengine.assets.AssetSpecifier;
 import com.redsponge.redengine.render.util.ScreenFiller;
 import com.redsponge.redengine.screen.AbstractScreen;
-import com.redsponge.redengine.transitions.FadeTransition;
 import com.redsponge.redengine.transitions.Transitions;
 import com.redsponge.redengine.utils.GameAccessor;
 import com.redsponge.redengine.utils.Logger;
@@ -32,7 +30,7 @@ public class EndAnimationScreen extends AbstractScreen {
     public void show() {
         endMusic = Gdx.audio.newMusic(Gdx.files.internal("music/ka_boom.ogg"));
         endMusic.setOnCompletionListener((m) -> {
-            ga.transitionTo(new TrollEndRoom(ga), Transitions.linearFade(4, batch, shapeRenderer));
+            Logger.log(this, "Music hast finishedth");
         });
         animation = assets.getAnimation("endAnimation");
 
@@ -43,6 +41,9 @@ public class EndAnimationScreen extends AbstractScreen {
     @Override
     public void tick(float v) {
         timeRunning += v;
+        if(timeRunning > 28 && !transitioning) {
+            ga.transitionTo(new TrollEndScreen(ga), Transitions.linearFade(4, batch, shapeRenderer));
+        }
     }
 
     @Override

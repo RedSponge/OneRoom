@@ -18,6 +18,7 @@ public class GradualMusicHandler implements Disposable {
     public GradualMusicHandler(String... paths) {
         this.paths = paths;
         queued = -1;
+        current = -1;
         onCompletion = new ChangeOnComplete();
     }
 

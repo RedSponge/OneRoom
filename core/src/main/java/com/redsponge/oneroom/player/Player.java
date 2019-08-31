@@ -75,12 +75,6 @@ public class Player extends ScreenEntity {
         actor.pos.set(100, 100);
 
         vel = new IntVector2();
-        try {
-            collideFirst = actor.getClass().getDeclaredMethod("collideFirst", IntVector2.class);
-            collideFirst.setAccessible(true);
-        } catch (NoSuchMethodException e) {
-            e.printStackTrace();
-        }
 
         light = new PointLight(actor.pos.x, actor.pos.y, 100, LightTextures.getInstance().featheredPointLight);
         light.getColor().set(Color.WHITE);

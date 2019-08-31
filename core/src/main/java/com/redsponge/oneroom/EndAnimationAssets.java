@@ -7,6 +7,7 @@ import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.redsponge.redengine.assets.Asset;
 import com.redsponge.redengine.assets.AssetSpecifier;
 import com.redsponge.redengine.assets.atlas.AtlasAnimation;
+import com.redsponge.redengine.assets.atlas.AtlasFrame;
 
 public class EndAnimationAssets extends AssetSpecifier {
 
@@ -17,6 +18,8 @@ public class EndAnimationAssets extends AssetSpecifier {
     @Asset("textures/end_textures.atlas")
     private TextureAtlas textures;
 
-    @AtlasAnimation(animationName = "end", atlas = "textures", length = 6, frameDuration = 4.1f)
+    @AtlasAnimation(animationName = "end", atlas = "textures", length = 6, frameDuration = 4f)
     private Animation<TextureRegion> endAnimation;
+
+
 }

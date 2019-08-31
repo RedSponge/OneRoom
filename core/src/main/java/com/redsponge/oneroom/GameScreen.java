@@ -38,8 +38,8 @@ public class GameScreen extends AbstractScreen {
     public static final int WIDTH = 640;
     public static final int HEIGHT = (int) (WIDTH / ASPECT_RATIO);
 
-    private static final Color WALLS_COLOR = new Color(0.7f, 0.7f, 0.7f, 1);
-    private static final Color BACKGROUND_COLOR = new Color(237 / 255f, 237 / 255f, 237 / 255f, 1);
+    public static final Color WALLS_COLOR = new Color(0.7f, 0.7f, 0.7f, 1);
+    public static final Color BACKGROUND_COLOR = new Color(237 / 255f, 237 / 255f, 237 / 255f, 1);
 
     private PhysicsDebugRenderer pdr;
     private PhysicsWorld pWorld;
@@ -76,7 +76,7 @@ public class GameScreen extends AbstractScreen {
     public void show() {
         if(first) {
             first = false;
-            gmh = new GradualMusicHandler("music/1.wav", "music/2.wav", "music/4.wav", "music/5.wav", "music/6.wav");
+//            gmh = new GradualMusicHandler("music/1.wav", "music/2.wav", "music/4.wav", "music/5.wav", "music/6.wav");
 
             viewport = new FitViewport(WIDTH, HEIGHT);
             viewport.apply(true);
@@ -85,7 +85,7 @@ public class GameScreen extends AbstractScreen {
 
             ls = getSystem(LightSystem.class);
             ls.registerLightType(LightType.MULTIPLICATIVE);
-            ls.setAmbianceColor(Color.LIGHT_GRAY, LightType.MULTIPLICATIVE);
+            ls.setAmbianceColor(Color.WHITE, LightType.MULTIPLICATIVE);
 
             ls.registerLightType(LightType.ADDITIVE);
 
@@ -102,18 +102,18 @@ public class GameScreen extends AbstractScreen {
             computerScreen = new Computer(batch, shapeRenderer, ga);
             addEntity(computerScreen);
             setupFirstStage();
-            setupSecondStage();
+//            setupSecondStage();
 //            setupThirdStage();
-            computerPasswordIsCorrect();
-            summonTrollExitSwitch();
-            setupGravityFlipPlatforms();
-            didTroll = true;
-            didThatWasFun = true;
-            thirdStage = true;
-            computerScreen.getTalk().skipToTheEnd();
-            centralPlatform = addWall(WIDTH / 2 - 60, HEIGHT / 2, 120, 10);
-            currentGuessedPassword = "2143";
-            computerScreen.setState(ComputerState.MOVE_THROUGH_HINT);
+//            computerPasswordIsCorrect();
+//            summonTrollExitSwitch();
+//            setupGravityFlipPlatforms();
+//            didTroll = true;
+//            didThatWasFun = true;
+//            thirdStage = true;
+//            computerScreen.getTalk().skipToTheEnd();
+//            centralPlatform = addWall(WIDTH / 2 - 60, HEIGHT / 2, 120, 10);
+//            currentGuessedPassword = "2143";
+//            computerScreen.setState(ComputerState.MOVE_THROUGH_HINT);
         } else {
             try {
                 Field f = AbstractScreen.class.getDeclaredField("entities");
@@ -132,7 +132,8 @@ public class GameScreen extends AbstractScreen {
     }
 
     private void setupFirstStage() {
-        gmh.transitionTo(0);
+//        gmh.transitionTo(0);
+
         addWall(-WIDTH * 2, 0, WIDTH * 5, (HEIGHT - ROOM_HEIGHT) / 2);
         addWall(-WIDTH * 2, (ROOM_HEIGHT + (HEIGHT - ROOM_HEIGHT) / 2), WIDTH * 5, (HEIGHT - ROOM_HEIGHT) / 2);
 
@@ -188,7 +189,8 @@ public class GameScreen extends AbstractScreen {
         }
 
         Vector3 camPos = viewport.getCamera().position;
-        camPos.set(camTarget);
+        if(camPos.dst(camTarget) > 5) camPos.lerp(camTarget, 0.1f);
+        Logger.log(this, camPos.dst(camTarget));
     }
 
 
@@ -246,7 +248,7 @@ public class GameScreen extends AbstractScreen {
     boolean lastStage;
     private void setupLastStage() {
         if(lastStage) return;
-        gmh.transitionTo(2);
+//        gmh.transitionTo(2);
         lastStage = true;
         for (Wall gravityWall : gravityWalls) {
             gravityWall.remove();
@@ -469,12 +471,12 @@ public class GameScreen extends AbstractScreen {
 
     @Override
     public void dispose() {
-        gmh.dispose();
+//        gmh.dispose();
     }
 
     public void computerPasswordIsCorrect() {
         computerScreen.setState(ComputerState.HAPPY);
-        gmh.transitionTo(1);
+//        gmh.transitionTo(1);
         if(binaryHints != null) {
             for (Wall binaryHint : binaryHints) {
                 binaryHint.remove();
@@ -498,14 +500,21 @@ public class GameScreen extends AbstractScreen {
                 computerScreen.setTimeUntilGravityTaunt(10);
                 didTroll = true;
             } else if(!didThatWasFun) {
-                computerScreen.doTalk("Alright, that was fun{WAIT=3} ", true, null, () ->
-                        computerScreen.doTalk("Hey can I real-talk with you for a second?{WAIT=1} <ACTIVATING REAL-TALK MODE...>{WAIT=3} ", false, null, () ->
-                            computerScreen.doTalk("If you see a big red button called 'SELF-DESTRUCT'..{WAIT=2} DON'T PRESS IT{WAIT}.{WAIT}.{WAIT}.{WAIT=3} please{WAIT=2} ", false, null, () -> {
-                                computerScreen.doTalk("<DEACTIVATING REAL-TALK MODE...>{WAIT=2} Anyways real talk over. Time to go back to being annoying{WAIT=2} If you could completely ignore the thing that I'm about to show you it will be very appreciated, Thanks!{WAIT=3} ", null, () -> {
-                                    computerScreen.setState(ComputerState.MOVE_THROUGH_HINT);
-                                });
-                            })
-                                ));
+                computerScreen.setShouldGravityTaunt(false);
+                computerScreen.doTalk(
+                        "Alright! That was fun!{WAIT=3} ", true, null, () ->
+                computerScreen.doTalk(
+                        "Hey, can I talk to you seriously for a moment?{WAIT=3} ", null, () ->
+                computerScreen.doTalk(
+                        "<SERIOUS MODE ACTIVATED>{WAIT=2} ", null, () ->
+                computerScreen.doTalk(
+                        "If you ever see a big red button called 'SELF-DESTRUCT'.. DON'T PRESS IT!!!{WAIT=2} ...{WAIT} please{WAIT=3} ", null, () ->
+                computerScreen.doTalk(
+                        "<SERIOUS MODE DEACTIVATED>{WAIT=2} ", null, () ->
+                computerScreen.doTalk(
+                        "On another topic.. If you want to make me happy, please ignore this clue that I must show you{WAIT=2} ", null, () ->
+                computerScreen.setState(ComputerState.MOVE_THROUGH_HINT)
+                ))))));
                 didThatWasFun = true;
             }
         });
@@ -520,7 +529,7 @@ public class GameScreen extends AbstractScreen {
     }
 
     public void playEndAnimation() {
-        gmh.dispose();
+//        gmh.dispose();
         ga.transitionTo(new EndAnimationScreen(ga), Transitions.linearFade(5, batch, shapeRenderer));
     }
 }

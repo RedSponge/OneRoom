@@ -34,7 +34,7 @@ computer/computer_enter_password
   index: -1
 computer/computer_enter_password_fullscreen
   rotate: false
-  xy: 794, 14
+  xy: 860, 14
   size: 64, 36
   orig: 64, 36
   offset: 0, 0
@@ -95,9 +95,16 @@ computer/computer_passthrough_hint
   orig: 64, 48
   offset: 0, 0
   index: -1
+computer/computer_title
+  rotate: false
+  xy: 794, 2
+  size: 64, 48
+  orig: 64, 48
+  offset: 0, 0
+  index: -1
 computer/textbox
   rotate: false
-  xy: 860, 34
+  xy: 926, 34
   size: 16, 16
   orig: 16, 16
   offset: 0, 0
