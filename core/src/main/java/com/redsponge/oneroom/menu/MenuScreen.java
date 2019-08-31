@@ -82,6 +82,7 @@ public class MenuScreen extends AbstractScreen {
 
         menu = assets.get("music", Music.class);
         menu.setLooping(true);
+        menu.setVolume(.5f);
         menu.play();
     }
 
