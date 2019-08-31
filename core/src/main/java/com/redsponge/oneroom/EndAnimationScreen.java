@@ -35,6 +35,7 @@ public class EndAnimationScreen extends AbstractScreen {
         animation = assets.getAnimation("endAnimation");
 
         viewport = new FitViewport(WIDTH, HEIGHT);
+        endMusic.setVolume(0.6f);
         endMusic.play();
     }
 

@@ -3,6 +3,7 @@ package com.redsponge.oneroom;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
 import com.badlogic.gdx.math.Vector2;
@@ -67,16 +68,21 @@ public class GameScreen extends AbstractScreen {
 
     private GradualMusicHandler gmh;
 
-    public GameScreen(GameAccessor ga) {
+    private boolean noMagic;
+    private float timeUntilFreeing;
+
+    public GameScreen(GameAccessor ga, boolean noMagic) {
         super(ga);
+        this.noMagic = noMagic;
     }
 
     boolean first = true;
     @Override
     public void show() {
+        timeUntilFreeing = -1;
         if(first) {
             first = false;
-//            gmh = new GradualMusicHandler("music/1.wav", "music/2.wav", "music/4.wav", "music/5.wav", "music/6.wav");
+            gmh = new GradualMusicHandler("music/slow_start.ogg", "music/main_part.ogg", "music/danger.ogg");
 
             viewport = new FitViewport(WIDTH, HEIGHT);
             viewport.apply(true);
@@ -103,15 +109,15 @@ public class GameScreen extends AbstractScreen {
             addEntity(computerScreen);
             setupFirstStage();
 //            setupSecondStage();
-//            setupThirdStage();
-//            computerPasswordIsCorrect();
+////            setupThirdStage();
+////            computerPasswordIsCorrect();
 //            summonTrollExitSwitch();
 //            setupGravityFlipPlatforms();
 //            didTroll = true;
 //            didThatWasFun = true;
 //            thirdStage = true;
-//            computerScreen.getTalk().skipToTheEnd();
 //            centralPlatform = addWall(WIDTH / 2 - 60, HEIGHT / 2, 120, 10);
+//            computerScreen.getTalk().skipToTheEnd();
 //            currentGuessedPassword = "2143";
 //            computerScreen.setState(ComputerState.MOVE_THROUGH_HINT);
         } else {
@@ -132,7 +138,7 @@ public class GameScreen extends AbstractScreen {
     }
 
     private void setupFirstStage() {
-//        gmh.transitionTo(0);
+        gmh.transitionTo(0, false);
 
         addWall(-WIDTH * 2, 0, WIDTH * 5, (HEIGHT - ROOM_HEIGHT) / 2);
         addWall(-WIDTH * 2, (ROOM_HEIGHT + (HEIGHT - ROOM_HEIGHT) / 2), WIDTH * 5, (HEIGHT - ROOM_HEIGHT) / 2);
@@ -170,27 +176,37 @@ public class GameScreen extends AbstractScreen {
 
     @Override
     public void tick(float v) {
+        if(timeUntilFreeing - v < 0 && timeUntilFreeing >= 0) {
+            bottomTopLever.toggle();
+            Logger.log(this, timeUntilFreeing);
+        }
+        timeUntilFreeing -= v;
         for (PortalLink portal : portals) {
             portal.processPlayer(player);
         }
         pWorld.update(v);
         tickEntities(v);
 
-        if(player.getPos().x > ROOM_WIDTH + (WIDTH - ROOM_WIDTH) / 2 || player.getPos().x < (WIDTH - ROOM_WIDTH) / 2) {
-            camTarget.x = player.getPos().x;
+        if(noMagic) {
+            viewport.getCamera().position.set(WIDTH / 2f, HEIGHT / 2f, 0);
+            ((OrthographicCamera)viewport.getCamera()).zoom = 3;
         } else {
-            camTarget.x = WIDTH / 2f;
-        }
+            if (player.getPos().x > ROOM_WIDTH + (WIDTH - ROOM_WIDTH) / 2 || player.getPos().x < (WIDTH - ROOM_WIDTH) / 2) {
+                camTarget.x = player.getPos().x;
+            } else {
+                camTarget.x = WIDTH / 2f;
+            }
 
-        if(player.getPos().y > ROOM_HEIGHT + (HEIGHT - ROOM_HEIGHT) / 2 || player.getPos().y < (HEIGHT - ROOM_HEIGHT) / 2) {
-            camTarget.y = player.getPos().y;
-        } else {
-            camTarget.y = HEIGHT / 2f;
-        }
+            if (player.getPos().y > ROOM_HEIGHT + (HEIGHT - ROOM_HEIGHT) / 2 || player.getPos().y < (HEIGHT - ROOM_HEIGHT) / 2) {
+                camTarget.y = player.getPos().y;
+            } else {
+                camTarget.y = HEIGHT / 2f;
+            }
 
-        Vector3 camPos = viewport.getCamera().position;
-        if(camPos.dst(camTarget) > 5) camPos.lerp(camTarget, 0.1f);
-        Logger.log(this, camPos.dst(camTarget));
+            Vector3 camPos = viewport.getCamera().position;
+            if (camPos.dst(camTarget) > 5) camPos.lerp(camTarget, 0.1f);
+            Logger.log(this, camPos.dst(camTarget));
+        }
     }
 
 
@@ -228,13 +244,17 @@ public class GameScreen extends AbstractScreen {
                 }
                 checkMoveThroughPuzzle();
             }
+            if(!bottomTopLever.isOn() && player.getPos().y < 0) {
+                if(!computerScreen.isTalking()) computerScreen.doTalk("I mean..{WAIT=4} honestly..{WAIT} what did you expect?!{WAIT} You are so so so so so dumb.{WAIT=2} ", null, null);
+                timeUntilFreeing = 8;
+            }
         });
         Lever lever = new Lever(batch, shapeRenderer);
         lever.setInverted(true);
         lever.setAttachedToggleable(toggleableWall);
 
         addEntity(lever);
-        lever.getPos().set(WIDTH / 4, (HEIGHT - ROOM_HEIGHT) / 2);
+        lever.getPos().set((int) (WIDTH / 4 * 0.7f), (HEIGHT - ROOM_HEIGHT) / 2);
         bottomTopLever = lever;
     }
 
@@ -248,7 +268,7 @@ public class GameScreen extends AbstractScreen {
     boolean lastStage;
     private void setupLastStage() {
         if(lastStage) return;
-//        gmh.transitionTo(2);
+        gmh.transitionTo(2, true);
         lastStage = true;
         for (Wall gravityWall : gravityWalls) {
             gravityWall.remove();
@@ -476,7 +496,6 @@ public class GameScreen extends AbstractScreen {
 
     public void computerPasswordIsCorrect() {
         computerScreen.setState(ComputerState.HAPPY);
-//        gmh.transitionTo(1);
         if(binaryHints != null) {
             for (Wall binaryHint : binaryHints) {
                 binaryHint.remove();
@@ -491,7 +510,7 @@ public class GameScreen extends AbstractScreen {
     public void summonTrollExitSwitch() {
         Lever l = new Lever(batch, shapeRenderer);
         addEntity(l);
-        l.getPos().set(WIDTH / 4 * 3, (HEIGHT - ROOM_HEIGHT) / 2);
+        l.getPos().set((int) (WIDTH / 4 * 3.1f), (HEIGHT - ROOM_HEIGHT) / 2);
         l.setOnToggle(() -> {
             player.toggleGravity();
             if(!didTroll) {
@@ -506,15 +525,18 @@ public class GameScreen extends AbstractScreen {
                 computerScreen.doTalk(
                         "Hey, can I talk to you seriously for a moment?{WAIT=3} ", null, () ->
                 computerScreen.doTalk(
-                        "<SERIOUS MODE ACTIVATED>{WAIT=2} ", null, () ->
-                computerScreen.doTalk(
+                        "<SERIOUS MODE ACTIVATED>{WAIT=2} ", null, () -> {
+                            gmh.getCurrent().pause();
+                            computerScreen.doTalk(
                         "If you ever see a big red button called 'SELF-DESTRUCT'.. DON'T PRESS IT!!!{WAIT=2} ...{WAIT} please{WAIT=3} ", null, () ->
-                computerScreen.doTalk(
-                        "<SERIOUS MODE DEACTIVATED>{WAIT=2} ", null, () ->
-                computerScreen.doTalk(
-                        "On another topic.. If you want to make me happy, please ignore this clue that I must show you{WAIT=2} ", null, () ->
-                computerScreen.setState(ComputerState.MOVE_THROUGH_HINT)
-                ))))));
+                                    computerScreen.doTalk(
+                        "<SERIOUS MODE DEACTIVATED>{WAIT=2} ", null, () -> {
+                                                gmh.getCurrent().play();
+                                                    computerScreen.doTalk(
+                        "On another topic.. If you want to make me happy, please ignore this clue that RedSponge made me show you.{WAIT=2} ", null, () ->
+                                                                    computerScreen.setState(ComputerState.MOVE_THROUGH_HINT)
+                                                    );}));
+                        })));
                 didThatWasFun = true;
             }
         });
@@ -529,7 +551,11 @@ public class GameScreen extends AbstractScreen {
     }
 
     public void playEndAnimation() {
-//        gmh.dispose();
+        gmh.dispose();
         ga.transitionTo(new EndAnimationScreen(ga), Transitions.linearFade(5, batch, shapeRenderer));
+    }
+
+    public GradualMusicHandler getGradualMusicHandler() {
+        return gmh;
     }
 }

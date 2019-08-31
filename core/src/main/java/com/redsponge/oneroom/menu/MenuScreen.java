@@ -2,9 +2,12 @@ package com.redsponge.oneroom.menu;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.InputAdapter;
+import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType;
+import com.badlogic.gdx.math.Interpolation;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.viewport.FitViewport;
@@ -40,6 +43,8 @@ public class MenuScreen extends AbstractScreen {
     private boolean showInstructions = true;
     private float counter;
 
+    private Music menu;
+
     public MenuScreen(GameAccessor ga) {
         super(ga);
     }
@@ -69,10 +74,15 @@ public class MenuScreen extends AbstractScreen {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean keyTyped(char character) {
-                ga.transitionTo(new GameScreen(ga), Transitions.sineSlide(1, batch, shapeRenderer));
+                if(transitioning) return false;
+                ga.transitionTo(new GameScreen(ga, false), Transitions.sineSlide(1, batch, shapeRenderer));
                 return true;
             }
         });
+
+        menu = assets.get("music", Music.class);
+        menu.setLooping(true);
+        menu.play();
     }
 
     private void addWall(int i, int i1, int i2, int i3) {
@@ -82,10 +92,6 @@ public class MenuScreen extends AbstractScreen {
     @Override
     public void tick(float v) {
         counter+=v;
-        if(counter > 2) {
-            showInstructions = !showInstructions;
-            counter = 0;
-        }
     }
 
     @Override
@@ -104,7 +110,10 @@ public class MenuScreen extends AbstractScreen {
             }
         }
         renderEntities();
-        if(showInstructions) batch.draw(instructions, WIDTH / 2f - instructions.getWidth() / 2f, HEIGHT / 8f);
+        float progress = Math.min(counter / 5f, 1);
+        batch.setColor(1, 1, 1, progress);
+        batch.draw(instructions, WIDTH / 2f - instructions.getWidth() / 2f, HEIGHT / 8f);
+        batch.setColor(Color.WHITE);
         batch.end();
         shapeRenderer.setProjectionMatrix(viewport.getCamera().combined);
         shapeRenderer.setColor(WALLS_COLOR);

@@ -1,7 +1,10 @@
 package com.redsponge.oneroom;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input.Keys;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.assets.loaders.ParticleEffectLoader;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -21,6 +24,7 @@ import com.redsponge.redengine.lighting.LightType;
 import com.redsponge.redengine.physics.PhysicsWorld;
 import com.redsponge.redengine.render.util.ScreenFiller;
 import com.redsponge.redengine.screen.AbstractScreen;
+import com.redsponge.redengine.transitions.Transitions;
 import com.redsponge.redengine.utils.GameAccessor;
 
 import static com.redsponge.oneroom.GameScreen.ROOM_HEIGHT;
@@ -58,14 +62,26 @@ public class TrollEndScreen extends AbstractScreen {
     private Texture instructions;
     private boolean showInstructions;
 
+    private Music music;
+    private Music menuMusic;
+
     public TrollEndScreen(GameAccessor ga) {
         super(ga);
     }
 
     @Override
     public void show() {
+        time = -5;
         viewport = new FitViewport(WIDTH, HEIGHT);
         guiViewport = new FitViewport(WIDTH, HEIGHT);
+
+        music = assets.get("music", Music.class);
+        music.setVolume(0.5f);
+
+        menuMusic = assets.get("menuMusic", Music.class);
+        menuMusic.setLooping(true);
+        menuMusic.setVolume(0.5f);
+
         addSystem(LightSystem.class, WIDTH, HEIGHT, batch);
         ls = getSystem(LightSystem.class);
         ls.registerLightType(LightType.ADDITIVE);
@@ -103,6 +119,9 @@ public class TrollEndScreen extends AbstractScreen {
     public void tick(float v) {
         pWorld.update(v);
         tickEntities(v);
+        if(time + v > 0 && time < 0) {
+            music.play();
+        }
         time += v;
 
         viewport.getCamera().position.x = Math.min(WIDTH / 2f - (30 * (10 - time)), WIDTH / 2f);
@@ -111,15 +130,20 @@ public class TrollEndScreen extends AbstractScreen {
             computer.setRevealed(true);
             computer.doTalk("Well.. Not really..{WAIT} But I can definitely say that this experiment was a HUGE SUCCESS!!{WAIT=2} You see..{WAIT} There really was...{WAIT=3} No Escape.{WAIT=4} ", null, () -> {
                 computer.turnOff();
+                menuMusic.play();
+                Gdx.input.setInputProcessor(new InputAdapter() {
+                    @Override
+                    public boolean keyDown(int keycode) {
+                        boolean noMagic = keycode == Keys.M;
+                        ga.transitionTo(new GameScreen(ga, noMagic), Transitions.sineSlide(1, batch, shapeRenderer));
+                        return true;
+                    }
+                });
             });
             reveal = true;
         }
         if(computer.isOff()) {
             instructionTimer += v;
-            if(instructionTimer > 2) {
-                showInstructions = !showInstructions;
-                instructionTimer = 0;
-            }
         }
     }
 
@@ -170,8 +194,16 @@ public class TrollEndScreen extends AbstractScreen {
         batch.setProjectionMatrix(guiViewport.getCamera().combined);
         batch.begin();
         computer.renderToUI();
-        if(showInstructions) batch.draw(instructions, WIDTH / 2f - instructions.getWidth() / 2f, HEIGHT / 8f);
+        float progress = Math.min(instructionTimer / 5f, 1);
+        batch.setColor(1, 1, 1, progress);
+        batch.draw(instructions, WIDTH / 2f - instructions.getWidth() / 2f, HEIGHT / 8f);
+        batch.setColor(Color.WHITE);
         batch.end();
+    }
+
+    @Override
+    public void hide() {
+        Gdx.input.setInputProcessor(null);
     }
 
     @Override

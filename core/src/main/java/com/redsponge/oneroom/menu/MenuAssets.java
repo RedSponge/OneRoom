@@ -1,6 +1,7 @@
 package com.redsponge.oneroom.menu;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.TextureAtlas;
@@ -32,4 +33,7 @@ public class MenuAssets extends AssetSpecifier {
 
     @Asset("ui/instructions.png")
     private Texture instructions;
+
+    @Asset("music/menu.ogg")
+    private Music music;
 }

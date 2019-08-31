@@ -1,6 +1,7 @@
 package com.redsponge.oneroom;
 
 import com.badlogic.gdx.assets.AssetManager;
+import com.badlogic.gdx.audio.Music;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.Animation;
@@ -52,4 +53,11 @@ public class TrollEndAssets extends AssetSpecifier {
 
     @Asset("ui/instructions_magic.png")
     private Texture instructions;
+
+    @Asset("music/very_sad.ogg")
+    private Music music;
+
+    @Asset("music/menu.ogg")
+    private Music menuMusic;
+
 }

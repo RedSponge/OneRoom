@@ -77,7 +77,7 @@ public class EndAnimationComputer extends ScreenEntity {
     public void tick(float v) {
         if(off) return;
         time += v;
-        if(time > 3 && !startedMonologue) {
+        if(time > 8 && !startedMonologue) {
             doTalk("And thus..{WAIT} the player decided to do it..{WAIT=2} They destroyed the lab..{WAIT} And finally...{WAIT=2} they were free{EVENT=summon_player}.{WAIT=3} ", (m) -> ((TrollEndScreen)screen).spawnPlayer(), null);
             startedMonologue = true;
         }

@@ -5,7 +5,6 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.Animation;
 import com.badlogic.gdx.graphics.g2d.NinePatch;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.graphics.g2d.TextureAtlas;
 import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
@@ -22,7 +21,6 @@ import com.redsponge.redengine.lighting.LightType;
 import com.redsponge.redengine.screen.ScreenEntity;
 import com.redsponge.redengine.transitions.Transitions;
 import com.redsponge.redengine.utils.GameAccessor;
-import com.redsponge.redengine.utils.Logger;
 
 import java.util.function.Consumer;
 
@@ -65,6 +63,8 @@ public class Computer extends ScreenEntity {
 
     private ActivateableLight light;
     private LightSystem ls;
+    private boolean saidAnotherWarning;
+    private boolean saidEvenMoreWarnings;
 
 
     public Computer(SpriteBatch batch, ShapeRenderer shapeRenderer, GameAccessor ga) {
@@ -141,14 +141,17 @@ public class Computer extends ScreenEntity {
             }
         }
         if(state == ComputerState.HAPPY && !saidWelcome) {
-            doTalk("Welcome Test Subject {SPEED=0.1}#5555515{NORMAL} to experiment {SPEED=0.1}#112435782{NORMAL}: \"No Escape\".{WAIT} I hope you find this place cozy, since,{WAIT} as you might have noticed,{WAIT} you cannot leave it{WAIT=4} ",
-                    null, () -> doTalk("Yup{SPEED=0.5}...{NORMAL}{WAIT} Cool right?{WAIT} You can never leave this place.{WAIT} Just you and me...{WAIT} Forever...{WAIT=5} ",
-                            null, () -> doTalk("Ok nevermind, I'm bored...{WAIT} If you want to leave the exit switch{EVENT=summon_troll_exit_switch} will be over there :){WAIT=3} ",
-                                (s) -> {if(s.equals("summon_troll_exit_switch")) ((GameScreen)screen).summonTrollExitSwitch();},
-                                () -> {
-                                    talking = false;
-                                }
-                    )));
+            doTalk("Welcome Test Subject {SPEED=0.1}#5555515{NORMAL} to experiment {SPEED=0.1}#112435782{NORMAL}: \"No Escape\".{WAIT} I hope you find this place cozy, since,{WAIT} as you might have noticed,{WAIT} you cannot leave it.{WAIT=4} ",
+                    false, true,null, () -> {
+                        ((GameScreen)screen).getGradualMusicHandler().transitionTo(1, false);
+                doTalk("Yup{SPEED=0.5}...{NORMAL}{WAIT} Cool right?{WAIT} You can never leave this place.{WAIT} Just you and me...{WAIT} Forever...{WAIT} In this one,{WAIT} singular{WAIT} room...{WAIT=5} ",
+                                null, () -> doTalk("Ok nevermind, I'm bored...{WAIT} If you want to leave the exit switch{EVENT=summon_troll_exit_switch} will be over there :){WAIT=3} ",
+                                        (s) -> {if(s.equals("summon_troll_exit_switch")) ((GameScreen)screen).summonTrollExitSwitch();},
+                                        () -> {
+                                            talking = false;
+                                        }
+                                ));
+                    });
             saidWelcome = true;
         }
 
@@ -158,20 +161,27 @@ public class Computer extends ScreenEntity {
                     doTalk("Hahahah you look so helpless stuck like that..{WAIT=3} ", true,null,
           () -> doTalk("I can't believe you actually fell for that!{WAIT} How stupid can one be?!{WAIT} Hahahahahhaha{WAIT=3} ", true, null,
           () -> doTalk("Hey, don't give me that look!{WAIT} I am just saying the truth...{WAIT=3} ", null,
-          () -> doTalk("{SLOW}{SHAKE=1;2;2}Uuuughhh{ENDSHAKE}{NORMAL} fine..{WAIT} I'll let you climb to your switch{WAIT} hang on...{WAIT=2} There{EVENT=build_gravity_platforms}.{WAIT} ",
+          () -> doTalk("{SLOW}{SHAKE=1;1;5}Uuuughhh{ENDSHAKE}{NORMAL} fine..{WAIT} I'll let you climb to your switch{WAIT} hang on...{WAIT=2} There{EVENT=build_gravity_platforms}.{WAIT} ",
                 (s) -> ((GameScreen)screen).setupGravityFlipPlatforms(), null))));
                 shouldGravityTaunt = false;
             }
         }
 
         if(state == ComputerState.ANGRY) {
-            timeAngry += v;
+            if(saidDudeStop) timeAngry += v;
             if(((GameScreen)screen).getPlayer().getPos().x < GameScreen.WIDTH / 3 && saidDudeStop && !saidDontDare) {
-                doTalk("NO!{WAIT} DON'T YOU DARE PRESS THAT BUTTON!!!{WAIT=2} ", null, null);
+                doTalk("NO!{WAIT} DON'T YOU DARE PRESS THAT BUTTON!!!{WAIT=2} BAD THINGS ARE GOING TO HAPPEN IF YOU PRESS IT!{WAIT=3} ", null, null);
                 ((GameScreen)screen).addWall(GameScreen.WIDTH / 3 - 20, 0, 10, GameScreen.HEIGHT - 40);
                 saidDontDare = true;
-                wallBlockSound.play();
-//                ((GameScreen)screen).getGradualMusicHandler().transitionTo(3);
+                wallBlockSound.play(0.5f);
+            }
+            if(timeAngry > 10 && !saidAnotherWarning) {
+                doTalk("YOU WILL BE VERY SORRY IF YOU PRESS THAT BUTTON!{WAIT=3} ", null, null);
+                saidAnotherWarning = true;
+            }
+            if(timeAngry > 25 && !saidEvenMoreWarnings) {
+                doTalk("YOU DON'T WANT TO KNOW WHAT I'LL DO IF YOU PRESS THAT BUTTON!!!!{WAIT=4}", null, null);
+                saidEvenMoreWarnings = true;
             }
         }
 
@@ -199,6 +209,11 @@ public class Computer extends ScreenEntity {
     }
 
     public void doTalk(String text, boolean laughing, Consumer<String> onEvent, Runnable onEnd) {
+        doTalk(text, laughing, false, onEvent, onEnd);
+    }
+
+    public void doTalk(String text, boolean laughing, boolean stopMusic, Consumer<String> onEvent, Runnable onEnd) {
+        if(stopMusic) ((GameScreen)screen).getGradualMusicHandler().getCurrent().pause();
         talk.skipToTheEnd();
         this.laughing = laughing;
         talk.setTypingListener(new TypingAdapter() {
@@ -212,6 +227,7 @@ public class Computer extends ScreenEntity {
                 Computer.this.laughing = false;
                 talking = false;
                 if(onEnd != null) onEnd.run();
+                if(stopMusic) ((GameScreen)screen).getGradualMusicHandler().getCurrent().play();
             }
         });
         talk.restart(text);
@@ -301,5 +317,9 @@ public class Computer extends ScreenEntity {
 
     public boolean isSaidDontDare() {
         return saidDontDare;
+    }
+
+    public boolean isTalking() {
+        return talking;
     }
 }
